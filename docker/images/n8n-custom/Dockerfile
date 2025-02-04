@@ -6,6 +6,24 @@ FROM --platform=linux/amd64 n8nio/base:${NODE_VERSION} AS builder
 # Build the application from source
 WORKDIR /src
 COPY . /src
+
+RUN echo "Current working directory:" && pwd
+
+# Copy the corporate CA certificate into the container
+COPY docker/images/n8n-custom/amd-ca.crt /usr/local/share/ca-certificates/
+
+# (Optional) Verify the current OS information
+RUN cat /etc/os-release
+
+# Disable TLS for apk by switching repository URLs from HTTPS to HTTP,
+# then update the CA certificates using Alpine's package manager.
+RUN sed -i 's|https://dl-cdn.alpinelinux.org|http://dl-cdn.alpinelinux.org|g' /etc/apk/repositories && \
+    apk update && apk add ca-certificates && update-ca-certificates
+
+# Disable TLS verification globally in the build stage for Node.js
+ENV NODE_TLS_REJECT_UNAUTHORIZED=0
+ENV npm_config_strict_ssl=false
+
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store --mount=type=cache,id=pnpm-metadata,target=/root/.cache/pnpm/metadata DOCKER_BUILD=true pnpm install --frozen-lockfile
 RUN pnpm build
 
@@ -57,6 +75,10 @@ RUN \
 	ln -s /usr/local/lib/node_modules/n8n/bin/n8n /usr/local/bin/n8n && \
 	mkdir .n8n && \
 	chown node:node .n8n
+
+# Convert CRLF to LF in entrypoint and node executable to fix shebang issue
+RUN sed -i 's/\r$//' /docker-entrypoint.sh && \
+    sed -i 's/\r$//' /usr/local/lib/node_modules/n8n/bin/n8n
 
 ENV SHELL /bin/sh
 USER node
