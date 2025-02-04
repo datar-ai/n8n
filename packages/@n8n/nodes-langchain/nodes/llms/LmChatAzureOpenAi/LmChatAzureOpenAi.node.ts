@@ -1,4 +1,3 @@
-/* eslint-disable n8n-nodes-base/node-dirname-against-convention */
 import { ChatOpenAI } from '@langchain/openai';
 import {
 	NodeConnectionType,
@@ -68,6 +67,7 @@ export class LmChatAzureOpenAi implements INodeType {
 				displayName: 'Model (Deployment) Name',
 				name: 'model',
 				type: 'string',
+				required: true,
 				description: 'The name of the model(deployment) to use',
 				default: '',
 			},
@@ -167,6 +167,7 @@ export class LmChatAzureOpenAi implements INodeType {
 	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
 		const credentials = await this.getCredentials<{
 			apiKey: string;
+			"Apim-apiKey": string;
 			resourceName: string;
 			apiVersion: string;
 			endpoint?: string;
@@ -187,10 +188,18 @@ export class LmChatAzureOpenAi implements INodeType {
 		const model = new ChatOpenAI({
 			azureOpenAIApiDeploymentName: modelName,
 			// instance name only needed to set base url
+			model: modelName,
 			azureOpenAIApiInstanceName: !credentials.endpoint ? credentials.resourceName : undefined,
 			azureOpenAIApiKey: credentials.apiKey,
 			azureOpenAIApiVersion: credentials.apiVersion,
 			azureOpenAIEndpoint: credentials.endpoint,
+			configuration: {
+				baseOptions: {
+					headers: {
+						'Ocp-Apim-Subscription-Key': credentials["Apim-apiKey"],
+					},
+				},
+			},
 			...options,
 			timeout: options.timeout ?? 60000,
 			maxRetries: options.maxRetries ?? 2,
@@ -198,7 +207,7 @@ export class LmChatAzureOpenAi implements INodeType {
 			modelKwargs: options.responseFormat
 				? {
 						response_format: { type: options.responseFormat },
-					}
+				  }
 				: undefined,
 			onFailedAttempt: makeN8nLlmFailedAttemptHandler(this),
 		});
