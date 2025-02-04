@@ -13,8 +13,16 @@ export class AzureOpenAiApi implements ICredentialType {
 			name: 'apiKey',
 			type: 'string',
 			typeOptions: { password: true },
-			required: true,
-			default: '',
+			required: false,
+			default: 'dummykey',
+		},
+		{
+			displayName: 'Ocp-Apim-Subscription Key',
+			name: 'Apim-apiKey', // Notice it is not used anywhere
+			type: 'string',
+			typeOptions: { password: true },
+			required: false,
+			default: '7cce1ac73d98442c844bb040b983114c',
 		},
 		{
 			displayName: 'Resource Name',
@@ -35,7 +43,7 @@ export class AzureOpenAiApi implements ICredentialType {
 			name: 'endpoint',
 			type: 'string',
 			default: undefined,
-			placeholder: 'https://westeurope.api.cognitive.microsoft.com',
+			placeholder: 'https://llm-api.amd.com/azure',
 		},
 	];
 
@@ -44,6 +52,8 @@ export class AzureOpenAiApi implements ICredentialType {
 		properties: {
 			headers: {
 				'api-key': '={{$credentials.apiKey}}',
+				// If the user also sets a Subscription Key, pass it through:
+				'Ocp-Apim-Subscription-Key': '={{$credentials["Apim-apiKey"]}}',
 			},
 		},
 	};
