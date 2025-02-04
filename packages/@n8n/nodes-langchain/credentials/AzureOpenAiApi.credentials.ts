@@ -22,7 +22,7 @@ export class AzureOpenAiApi implements ICredentialType {
 			type: 'string',
 			typeOptions: { password: true },
 			required: false,
-			default: '7cce1ac73d98442c844bb040b983114c',
+			default: 'dummykey',
 		},
 		{
 			displayName: 'Resource Name',
